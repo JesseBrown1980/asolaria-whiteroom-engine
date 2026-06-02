@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  engine-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # spine self-test (incl. no-secret-values scan), then the full engine + sector suites
+      - name: spine self-test
+        run: node --test test/spine.test.mjs
+      - name: engine + sector tests
+        run: node --test liris-whiteroom-engine.test.mjs liris-sector-emitter.test.mjs

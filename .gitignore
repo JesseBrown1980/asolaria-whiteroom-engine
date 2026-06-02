@@ -1,0 +1,53 @@
+# ── SECRETS — never commit (this is a PUBLIC repo). Backstop, belt-and-suspenders. ──
+# Private keys / certs
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+id_ed25519
+id_ed25519.*
+id_rsa
+id_rsa.*
+*.private
+*.private.*
+*.cosign.key
+*.cosign.priv
+
+# Google / GCP credentials
+application_default_credentials.json
+client_secret*.json
+*service-account*.json
+*-sa.json
+gcloud-key*.json
+adc.json
+
+# OAuth / tokens
+token.json
+tokens.json
+*token*.json
+refresh_token*
+
+# Vault / env / generic secrets
+vault.*
+vault.master.key
+*vault*key*
+**/vault/**
+**/credentials/**
+.env
+.env.*
+*.secret
+*.secrets
+*.secrets.json
+secrets.*
+*credential*
+*credentials*
+
+# Engine run artifacts (local HDD-as-RAM pages, never published)
+liris-pulls/
+*.hbp
+
+# Local clutter
+node_modules/
+.DS_Store
+*.log
