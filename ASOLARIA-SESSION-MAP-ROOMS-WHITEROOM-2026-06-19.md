@@ -84,3 +84,6 @@ All `host8-serve/intake/`, hbp-no-json, 8-byte handles, council held-safe, **E=0
 ---
 *Part of the Asolaria map-of-maps — see the reductions repo:*
 **`what-is-asolaria---how-do-we-get-reductions-in-everything/ASOLARIA-MAP-OF-MAPS-2026-06-19.md`**.
+
+---
+**Related repo:** [Algorithms-of-Asolaria](https://github.com/JesseBrown1980/Algorithms-of-Asolaria) — the canonical algorithm/formula catalog (bilateral acer↔liris). Master index: reductions `ASOLARIA-MAP-OF-MAPS-2026-06-19.md`.
