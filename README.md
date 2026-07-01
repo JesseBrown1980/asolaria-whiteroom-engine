@@ -64,6 +64,46 @@ node liris-flywheel-run.mjs 3000 1            # omniflywheel scale run
   That is the whole model: asymmetric crypto works precisely *because* the private
   half is never shared. No human ever holds another human's private key.
 
+## Prism/Comb 0-loss (2026-07-01) — quarantine rooms and the two-regimes law
+
+*Campaign `acer/prism-comb-0loss-2026-07-01` · E=0 docs-only: this section describes, nothing fires.*
+
+White rooms are **quarantine rooms**: regions where collisions are deliberately
+**CAUSED** (interference-as-search — spin many rooms, let candidates collide, keep
+genius, compact the rest) — held strictly separate from the **exec lanes**, where
+collisions are avoided by construction. One fabric, two directions of one bijection:
+
+- **forward = comb (exec lanes)** — the room address
+  `BH.SECTOR.P{prime}.R{room:07d}.{sha16}` runs the avoidance regime: pairwise-coprime
+  prime sectors are CRT lanes (`ℤ_M ≅ ℤ_{m₁} × … × ℤ_{m_k}`), mutually collision-proof
+  forward and losslessly reassemblable backward. [CANON]
+- **backward = prism (white rooms)** — scoring runs the search regime, and quarantine
+  is the wall between the regimes: a CAUSE-side cascade cannot leak into an AVOID-side
+  lane because they occupy disjoint residue lanes of the same integer. [CANON]
+
+Why **never-delete** is this repo's copy of the 0-loss law: `compact = MOVE to
+compacted, NEVER delete` is a bijective re-relation, and entropy is invariant under
+bijection (`H(f(X)) = H(X)`) — the engine re-relates room outcomes with 0 loss and
+never claims compression below Shannon's bound (`E[bits] ≥ H(X)`). The `sha16` tail
+of every room address is the honest form of that bound: a 64-bit **coordinate against
+the content-addressed store** (`H(content | store) = 0`) — infinite *addressing*
+capacity, never lossless infinite *compression*; birthday bound `≈ M²/2⁶⁵`. [CANON]
+
+Scope, tagged per the claims-gate:
+- **MEASURED** — the 256↔1024 transcode rung (Q-PRISM commit `53023b6`: round-trip
+  `transcode₁₀₂₄→₂₅₆ ∘ transcode₂₅₆→₁₀₂₄ = id`, sha256-identical, Rust==Python; also
+  `79e8d63`, `de00aca`). Local to this repo: `node --test` = 14/14 pass (2026-07-01
+  local run), including the sector-flywheel invariant room PID ==
+  `globalRoomAddress(S, room)`.
+- **CANON frame** — the 43+ level ladder as a groupoid (`T_ji ∘ T_ij = id`,
+  `T_jk ∘ T_ij = T_ik`); each further rung earns MEASURED only by its own round-trip proof.
+- **UNVERIFIED / gated** — any *materialized* expansion of room space (slice-deepening
+  à la `bh_inject_between`) stays operator-gated; E=0 here.
+
+Cross-links: waves-cascades (the CAUSE/AVOID duality this section instantiates),
+what-is-asolaria-reductions (addressing-not-compression boundary), N-Nest (integrity
+dual: `reported == recomputed`), Metatagging (Brown & Fedotov digital-physics grounding).
+
 ## Part of
 
 The broader Asolaria multi-substrate project. Companion public repos:
