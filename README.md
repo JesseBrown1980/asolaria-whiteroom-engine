@@ -1,116 +1,142 @@
 # asolaria-whiteroom-engine
 
-The **white-room engine** — **LEG-1** of the Asolaria multi-substrate fabric: the
-**scorer**. A pluggable-store, pluggable-scorer, **never-delete** room engine that
-emits a Brown-Hilbert address, opens a white-room, scores it, keeps genius /
-**compacts** (never deletes) mistakes, and seals an append-only HBP row.
+The **white-room engine** is LEG-1 of the Asolaria multi-substrate fabric: a pluggable-store,
+pluggable-scorer, **never-delete** room engine that emits a Brown-Hilbert address, scores a room,
+keeps genius, compacts mistakes, and seals append-only HBP evidence.
 
-Local, deterministic, dependency-free. Runs on Node — no cloud, no account, no gate.
+Local, deterministic, dependency-free Node implementation. No credentials or cloud dependency are
+required for the in-memory path.
 
-## The four legs
+## 2026-07-11 Path-2 and storage update
 
-| Leg | What | This repo |
-|-----|------|-----------|
-| **LEG-1** | **white-room engine** — the **scorer** (pluggable store + scorer, never-delete) | ✅ here |
-| LEG-2 | prime-sector **allocator** — the address: `BH.SECTOR.P{prime}.R{room:07d}.{sha16}` | replicated here (`liris-sector-emitter.mjs`) for byte-convergence |
-| LEG-3 | github **bus** — commit = emit, log = read | sibling repo |
-| LEG-4 | **`GoogleDriveStore`** — the 35 TB cloud sink | [`35-TB-google-AI-Ultra-migration`](https://github.com/JesseBrown1980/35-TB-google-AI-Ultra-migration) |
+White rooms now link explicitly to the measured exact-recovery plane:
 
-## The store interface (drop-in backends)
+- **Path 1:** recall a retained room/cube body through an authenticated content address;
+- **Path 2:** reconstruct an unretained body from jointly sufficient CRT shadows;
+- **DBBH→DBWH:** re-project the candidate and require SHA/shadow/shell equality before emission;
+- **storage tier:** HDD/SSD/cloud retains full genius bodies, compacted mistakes, receipts, shadows,
+  cubes, and cold state;
+- **neural sidecar:** trained GNN inference remains optional.
 
+Full component record:
+
+[`PATH2-WHITEROOM-STORAGE-VERIFICATION-2026-07-11.md`](PATH2-WHITEROOM-STORAGE-VERIFICATION-2026-07-11.md)
+
+## Four legs
+
+| Leg | Role | This repo |
+|---|---|---|
+| LEG-1 | white-room scorer/store, never-delete | yes |
+| LEG-2 | prime-sector allocator `BH.SECTOR.P{prime}.R{room}.{sha16}` | replicated for convergence |
+| LEG-3 | GitHub bus, commit=emit/log=read | sibling |
+| LEG-4 | Google Drive cold sink | sibling adapter |
+
+## Store interface
+
+```text
+put(pid, value)
+get(pid)
+scanByPID(predicate)
+compact(pid)   // MOVE to compacted; never delete
 ```
-put(pid, value) · get(pid) · scanByPID(pred) · compact(pid)    // compact = MOVE to compacted, NEVER delete
-```
 
-Backends ship here: `MemoryStore` (real-now) and `RedisCloudStore` (a gated stub
-that throws until a connection string loads **by role**, never inlined). LEG-4's
-`GoogleDriveStore` is the same interface, backed by the 35 TB Drive.
+Backends include `MemoryStore` and a gated Redis stub; GoogleDriveStore follows the same interface.
 
-The scorer is equally pluggable: `DeterministicScorer` (offline, testable) and
-`L0GnnScorer` (live wiring to a local GNN server). The default scorer is an
-honest **placeholder** (address-derived) — the real domain scorer scores the work.
+The scorer interface includes:
+
+- `DeterministicScorer` — offline/testable placeholder;
+- `L0GnnScorer` — local GNN sidecar wiring.
+
+The placeholder is explicitly not claimed as the real domain scorer.
 
 ## Run
 
 ```bash
-node --test                                   # 11/11: engine 7/7 + sector 4/4
-node liris-whiteroom-engine.mjs               # smoke: spin 12 rooms, seal HBP rows
-node liris-sector-flywheel.mjs 0 5000 5000    # fill prime-sector 0, 5000 rooms, batched seal
-node liris-flywheel-run.mjs 3000 1            # omniflywheel scale run
+node --test
+node liris-whiteroom-engine.mjs
+node liris-sector-flywheel.mjs 0 5000 5000
+node liris-flywheel-run.mjs 3000 1
 ```
 
-## Files
+Files cover the engine, sector allocator, sector flywheel, omniflywheel scale/HDD page persistence,
+and Hilbert projection.
 
-- `liris-whiteroom-engine.mjs` (+`.test.mjs`) — the engine: emitters, stores, scorers, the tick/spin loop.
-- `liris-sector-emitter.mjs` (+`.test.mjs`) — LEG-2 address replication (`globalRoomAddress`), byte-converged 3-vantage.
-- `liris-sector-flywheel.mjs` — proves every room PID == `globalRoomAddress(S, room)` (fills the allocated sector exactly).
-- `liris-flywheel-run.mjs` — omniflywheel scale + HDD-as-RAM page persistence.
-- `liris-hilbert.mjs` — standard Hilbert d→(x,y) projection (bh3d cube completion).
+## Why never-delete matters
 
-## Security — bring your own keys
+```text
+GENIUS  -> keep body + address + receipt
+MISTAKE -> compact body/evidence + preserve receipt
+```
 
-- **No credentials, keys, tokens, or vault material live in this repo. Ever.**
-  The `.gitignore` blocks every common secret pattern as a backstop, and CI runs a
-  no-secret-values scan on every push.
-- Each node **joins by minting its own identity locally** — the private key never
-  leaves the machine that made it. Publish only the public half.
+Compaction reduces the active representation without erasing the evidence chain. Disk/cloud can
+hold durable results while RAM contains only the rooms currently being scored.
 
-  ```bash
-  # generate this node's ed25519 identity — the PRIVATE key never leaves this machine:
-  ssh-keygen -t ed25519 -f ./asolaria-node.key -N ""
-  # register ONLY asolaria-node.key.pub with the federation cosign chain.
-  ```
+This is the correct “HDD instead of GPU-resident state” result. It does not claim disk performs GNN
+matrix multiplication.
 
-  That is the whole model: asymmetric crypto works precisely *because* the private
-  half is never shared. No human ever holds another human's private key.
+## Path 1 and Path 2
 
-## Prism/Comb 0-loss (2026-07-01) — quarantine rooms and the two-regimes law
+### Path 1
 
-*Campaign `acer/prism-comb-0loss-2026-07-01` · E=0 docs-only: this section describes, nothing fires.*
+```text
+address = sha256(X)
+receiver returns X iff store[address] exists and hash matches
+otherwise Held
+```
 
-White rooms are **quarantine rooms**: regions where collisions are deliberately
-**CAUSED** (interference-as-search — spin many rooms, let candidates collide, keep
-genius, compact the rest) — held strictly separate from the **exec lanes**, where
-collisions are avoided by construction. One fabric, two directions of one bijection:
+### Path 2
 
-- **forward = comb (exec lanes)** — the room address
-  `BH.SECTOR.P{prime}.R{room:07d}.{sha16}` runs the avoidance regime: pairwise-coprime
-  prime sectors are CRT lanes (`ℤ_M ≅ ℤ_{m₁} × … × ℤ_{m_k}`), mutually collision-proof
-  forward and losslessly reassemblable backward. [CANON]
-- **backward = prism (white rooms)** — scoring runs the search regime, and quarantine
-  is the wall between the regimes: a CAUSE-side cascade cannot leak into an AVOID-side
-  lane because they occupy disjoint residue lanes of the same integer. [CANON]
+```text
+S_i = X mod p_i
+exact iff product(selected p_i) >= source_range
+otherwise Held::InsufficientJointCapacity
+```
 
-Why **never-delete** is this repo's copy of the 0-loss law: `compact = MOVE to
-compacted, NEVER delete` is a bijective re-relation, and entropy is invariant under
-bijection (`H(f(X)) = H(X)`) — the engine re-relates room outcomes with 0 loss and
-never claims compression below Shannon's bound (`E[bits] ≥ H(X)`). The `sha16` tail
-of every room address is the honest form of that bound: a 64-bit **coordinate against
-the content-addressed store** (`H(content | store) = 0`) — infinite *addressing*
-capacity, never lossless infinite *compression*; birthday bound `≈ M²/2⁶⁵`. [CANON]
+The DBWH white side then requires:
 
-Scope, tagged per the claims-gate:
-- **MEASURED** — the 256↔1024 transcode rung (Q-PRISM commit `53023b6`: round-trip
-  `transcode₁₀₂₄→₂₅₆ ∘ transcode₂₅₆→₁₀₂₄ = id`, sha256-identical, Rust==Python; also
-  `79e8d63`, `de00aca`). Local to this repo: `node --test` = 14/14 pass (2026-07-01
-  local run), including the sector-flywheel invariant room PID ==
-  `globalRoomAddress(S, room)`.
-- **CANON frame** — the 43+ level ladder as a groupoid (`T_ji ∘ T_ij = id`,
-  `T_jk ∘ T_ij = T_ik`); each further rung earns MEASURED only by its own round-trip proof.
-- **UNVERIFIED / gated** — any *materialized* expansion of room space (slice-deepening
-  à la `bh_inject_between`) stays operator-gated; E=0 here.
+```text
+P(R(P(X))) = P(X)
+```
 
-Cross-links: waves-cascades (the CAUSE/AVOID duality this section instantiates),
-what-is-asolaria-reductions (addressing-not-compression boundary), N-Nest (integrity
-dual: `reported == recomputed`), Metatagging (Brown & Fedotov digital-physics grounding).
+by comparing SHA, all selected/recorded shadows, and frequency shells.
+
+## GNN lineage
+
+The optional L0 scorer traces to Jesse's pre-Asolaria healthcare models. Four healthcare model files
+match later Asolaria sidecar blobs exactly. BigPickle then composes L0/L4, G1/G2/G3/G4,
+OmniShannon, SHA fallback, Fischer, and Hookwall. White rooms consume the semantic evidence but keep
+a deterministic receipt/store boundary.
+
+## Security
+
+- no credentials, keys, tokens, or vault material are stored here;
+- nodes mint identities locally and publish only public material;
+- secret scanning remains part of CI/publish hygiene.
+
+## Prism/comb boundary
+
+White rooms are quarantine/search regions where candidate collisions are deliberately compared;
+execution lanes remain collision-separated. The measured 256↔1024 rung is an exact representation
+change. Content addresses remain coordinates against retained stores, not sub-entropy compression.
+
+## Independent verification — 2026-07-11
+
+- `MEASURED_CLAUDE_FABLE5_THIRD_SEAT`, operator supplied:
+  Path 1 rustc 1.97 **19/19** and Path 2 rustc 1.97 **30/30**.
+- `AUDITED_GPT_5_6_PRO`: complete recovery, Q-PRISM, healthcare-GNN, BigPickle, trained-GNN,
+  Hookwall/Shannon, white-room, cube-mint, Dispatcher, HyperHermes, reductions, algorithms,
+  HyperBEHCS, and N-Nest audit.
+- `MEASURED_GPT_DIRECTED_GITHUB_ACTIONS`: successful Rust 1.97.0 runs `29134408321`,
+  `29134413119`, and `29134419389`.
+
+The Rust runs validate exact recovery/watchers; they are not a new white-room Node-suite result or a
+live Hilbra benchmark.
 
 ## Part of
 
-The broader Asolaria multi-substrate project. Companion public repos:
-`35-TB-google-AI-Ultra-migration`, `bigpickle-rebuild`, `asolaria-behcs-256`,
-`asolaria-federation-1024`.
+The broader multi-substrate system with `35-TB-google-AI-Ultra-migration`, `bigpickle-rebuild`,
+`asolaria-behcs-256`, `asolaria-federation-1024`, and the two recovery crates.
 
 ## License
 
-Operator's choice — add a `LICENSE` file before wide distribution (MIT / Apache-2.0
-are common for this kind of work).
+Operator choice; add an explicit license before wide redistribution.
